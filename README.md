@@ -10,9 +10,7 @@ Everything you need to know about ROS -> http://www.ros.org/
 
 ## Getting Started
 
-The plugin is a widget reading outputs from a Neural Field (with a space to rate widget) and publishing the data to the motors of the Gummi Head.
-
-Of course you can adapt it to publish commands to any topics, but you might want to change the scale or format of the datas received from the Neural Field.
+The plugin is a widget cutting a 2D Neural field. This is a fork of the original plugin in cedar, except this one dynamically cut the 2D matrix. That means this plugin takes a float value as input and extract a vertical matrix at the horizontal coordinates of the input (-5,+5). If you have a (50,50) Neural Field and you give 10 as input to the DynaMatrixSlice, it will extract the vertical matrix from (5,0) to (15,50). 
 
 The code work for the 6.x version of Cedar.
 
@@ -79,14 +77,10 @@ Drag the MotorHead widget into the architecture panel. Connect the output of a s
 ## Work in progress
 
 
-The plugin is more like an artefact binding sensors to DFT.
-Work in progress to use Qt elements to control the settings.
-
-
 
 ## Authors
 
-Quentin Houbre - Tampere University of Technology
+Quentin Houbre - Tampere University
 
 ## License
 

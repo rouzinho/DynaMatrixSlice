@@ -1,6 +1,6 @@
-# MotorHead in Cedar
+# Dynamic Matrix Slice in Cedar
 
-This Cedar plugin allow the control of the Gummi-Head through a ROS Publisher
+This Cedar plugin allow to dynamically extract a vertical region of a 2D Neural Field.
 
 Everything you want to know about DFT -> https://dynamicfieldtheory.org/
 

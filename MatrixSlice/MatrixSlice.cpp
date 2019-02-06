@@ -385,6 +385,9 @@ void MatrixSlice::compute(const cedar::proc::Arguments&)
   const cv::Mat& input = this->mInput->getData();
   cv::Mat& output = this->mOutput->getData();
 
+  std::cout << "range " << this->getRange(2) <<'\n';
+  //std::cout << "range upper " << this->_mRangeUpper->getValue() <<'\n';
+
   CEDAR_DEBUG_ASSERT(this->_mRangeLower->size() == cedar::aux::math::getDimensionalityOf(input));
   CEDAR_DEBUG_ASSERT(this->_mRangeUpper->size() == cedar::aux::math::getDimensionalityOf(input));
 

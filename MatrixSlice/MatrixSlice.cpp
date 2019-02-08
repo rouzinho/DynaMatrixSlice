@@ -1,38 +1,4 @@
-/*======================================================================================================================
 
-    Copyright 2011, 2012, 2013, 2014, 2015, 2016, 2017 Institut fuer Neuroinformatik, Ruhr-Universitaet Bochum, Germany
-
-    This file is part of cedar.
-
-    cedar is free software: you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by the
-    Free Software Foundation, either version 3 of the License, or (at your
-    option) any later version.
-
-    cedar is distributed in the hope that it will be useful, but WITHOUT ANY
-    WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
-    License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with cedar. If not, see <http://www.gnu.org/licenses/>.
-
-========================================================================================================================
-
-    Institute:   Ruhr-Universitaet Bochum
-                 Institut fuer Neuroinformatik
-
-    File:        MatrixSlice.cpp
-
-    Maintainer:  Oliver Lomp
-    Email:       oliver.lomp@ini.ruhr-uni-bochum.de
-    Date:        2013 09 25
-
-    Description:
-
-    Credits:
-
-======================================================================================================================*/
 
 // CEDAR INCLUDES
 #include "MatrixSlice.h"
@@ -116,8 +82,8 @@ _mRangeLower
   (
     this,
     "range lower",
-    1,
-    0,
+    2,
+    10,
     cedar::aux::UIntVectorParameter::LimitType::positiveZero()
   )
 ),
@@ -127,16 +93,23 @@ _mRangeUpper
   (
     this,
     "range upper",
-    1,
-    1,
+    2,
+    15,
     cedar::aux::UIntVectorParameter::LimitType::positiveZero()
   )
 )
 {
   auto input = this->declareInput("matrix");
+  auto srentry = this->declareInput("entry",false);
+
   cedar::proc::typecheck::Matrix input_check;
+  cedar::proc::typecheck::Matrix input_entry;
   input_check.addAcceptedDimensionalityRange(1, 16);
+  input_entry.addAcceptedDimensionalityRange(0, 1);
   input->setCheck(input_check);
+  srentry->setCheck(input_entry);
+  l = 0;
+  u = 0;
 
   this->declareOutput("slice", mOutput);
 
@@ -206,16 +179,34 @@ void MatrixSlice::readConfiguration(const cedar::aux::ConfigurationNode& node)
 
 void MatrixSlice::inputConnectionChanged(const std::string& inputName)
 {
-  CEDAR_DEBUG_ASSERT(inputName == "matrix");
 
-  this->mInput = boost::dynamic_pointer_cast<cedar::aux::ConstMatData>(this->getInput(inputName));
-
-  if (this->mInput)
+  if(inputName == "matrix")
   {
-    this->mOutput->copyAnnotationsFrom(this->mInput);
-    this->updateDimensionality();
+    CEDAR_DEBUG_ASSERT(inputName == "matrix");
+    this->mInput = boost::dynamic_pointer_cast<cedar::aux::ConstMatData>(this->getInput(inputName));
+
+
+      if (this->mInput)
+      {
+        this->mOutput->copyAnnotationsFrom(this->mInput);
+        this->updateDimensionality();
+
+      }
   }
+
+  if(inputName == "entry")
+  {
+   // inputConnectionChanged is called for any input. The incoming data is assigned depending on the name of the input
+   this->mInputEntry = boost::dynamic_pointer_cast<cedar::aux::ConstMatData>(this->getInput(inputName));
+  }
+
 }
+
+void MatrixSlice::nothingChanged()
+{
+
+}
+
 
 void MatrixSlice::updateDimensionality()
 {
@@ -254,11 +245,13 @@ void MatrixSlice::updateDimensionality()
 
 void MatrixSlice::allocateOutputMatrix()
 {
-  cedar::proc::Step::ReadLocker locker(this);
+  //cedar::proc::Step::ReadLocker locker(this);
   if (!this->mInput || this->mInput->isEmpty())
   {
     return;
   }
+
+  std::cout << "ALLOCATE MATRIX" << '\n';
 
   const cv::Mat& input = this->mInput->getData();
   unsigned int dimensionality = cedar::aux::math::getDimensionalityOf(input);
@@ -277,8 +270,20 @@ void MatrixSlice::allocateOutputMatrix()
     CEDAR_DEBUG_ASSERT(output_dimension < this->_mRangeLower->size());
     CEDAR_DEBUG_ASSERT(output_dimension < this->_mRangeUpper->size());
 
-    int lower = static_cast<int>(this->_mRangeLower->at(output_dimension));
-    int upper = static_cast<int>(this->_mRangeUpper->at(output_dimension));
+    int lower;
+    int upper;
+
+    if( output_dimension == 0)
+    {
+      lower = static_cast<int>(this->_mRangeLower->at(output_dimension));
+      upper = static_cast<int>(this->_mRangeUpper->at(output_dimension));
+    }
+    else
+    {
+      lower = l;
+      upper = u;
+    }
+
     int dim_size = input.size[input_dimension];
 
 
@@ -358,7 +363,7 @@ void MatrixSlice::allocateOutputMatrix()
   cv::Mat old_output = this->mOutput->getData();
   this->mOutput->setData(output);
 
-  locker.unlock();
+  //locker.unlock();
 
   if (output.type() != old_output.type() || !cedar::aux::math::matrixSizesEqual(output, old_output))
   {
@@ -372,7 +377,6 @@ void MatrixSlice::rangeChanged()
   {
     return;
   }
-
   this->allocateOutputMatrix();
 
   this->resetState();
@@ -383,13 +387,27 @@ void MatrixSlice::rangeChanged()
 void MatrixSlice::compute(const cedar::proc::Arguments&)
 {
   const cv::Mat& input = this->mInput->getData();
+  if(this->mInputEntry)
+  {
+    const cv::Mat& inputEntry = this->mInputEntry->getData();
+    float t1 = inputEntry.at<float>(0);
+    int v = static_cast<int> (t1);
+    if(std::abs(old_value - v) > 1)
+    {
+      l = v - 4;
+      u = v + 4;
+      old_value = v;
+      this->rangeChanged();
+    }
+
+  }
+
   cv::Mat& output = this->mOutput->getData();
 
-  std::cout << "range " << this->getRange(2) <<'\n';
-  //std::cout << "range upper " << this->_mRangeUpper->getValue() <<'\n';
+  
 
-  CEDAR_DEBUG_ASSERT(this->_mRangeLower->size() == cedar::aux::math::getDimensionalityOf(input));
-  CEDAR_DEBUG_ASSERT(this->_mRangeUpper->size() == cedar::aux::math::getDimensionalityOf(input));
+  //CEDAR_DEBUG_ASSERT(this->_mRangeLower->size() == cedar::aux::math::getDimensionalityOf(input));
+  //CEDAR_DEBUG_ASSERT(this->_mRangeUpper->size() == cedar::aux::math::getDimensionalityOf(input));
 
   output = input(&mRanges.front()).clone();
 }

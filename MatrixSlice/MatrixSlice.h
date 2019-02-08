@@ -130,6 +130,8 @@ public slots:
   //! Called when the selected range of the slice changes.
   void rangeChanged();
 
+  void nothingChanged();
+
   //--------------------------------------------------------------------------------------------------------------------
   // protected methods
   //--------------------------------------------------------------------------------------------------------------------
@@ -158,6 +160,8 @@ private:
   //! Input matrix.
   cedar::aux::ConstMatDataPtr mInput;
 
+  cedar::aux::ConstMatDataPtr mInputEntry;
+
   //! Output matrix.
   cedar::aux::MatDataPtr mOutput;
 
@@ -183,6 +187,11 @@ private:
 
   //! Parameter used for determining the upper range of the matrix slice.
   cedar::aux::UIntVectorParameterPtr _mRangeUpper;
+
+  int old_pos;
+  int old_value;
+  int l;
+  int u;
 
 }; // class cedar::proc::steps::MatrixSlice
 

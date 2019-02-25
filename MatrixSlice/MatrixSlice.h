@@ -192,6 +192,7 @@ private:
   int old_value;
   int l;
   int u;
+  bool first;
 
 }; // class cedar::proc::steps::MatrixSlice
 

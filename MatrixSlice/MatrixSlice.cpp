@@ -110,6 +110,7 @@ _mRangeUpper
   srentry->setCheck(input_entry);
   l = 0;
   u = 0;
+  first = true;
 
   this->declareOutput("slice", mOutput);
 
@@ -251,7 +252,7 @@ void MatrixSlice::allocateOutputMatrix()
     return;
   }
 
-  std::cout << "ALLOCATE MATRIX" << '\n';
+  //std::cout << "ALLOCATE MATRIX" << '\n';
 
   const cv::Mat& input = this->mInput->getData();
   unsigned int dimensionality = cedar::aux::math::getDimensionalityOf(input);
@@ -390,21 +391,30 @@ void MatrixSlice::compute(const cedar::proc::Arguments&)
   if(this->mInputEntry)
   {
     const cv::Mat& inputEntry = this->mInputEntry->getData();
-    float t1 = inputEntry.at<float>(0);
-    int v = static_cast<int> (t1);
-    if(std::abs(old_value - v) > 1)
-    {
-      l = v - 4;
-      u = v + 4;
-      old_value = v;
-      this->rangeChanged();
-    }
+    float d;
+    int i;
 
+    cv::Size s = inputEntry.size();
+    for(i = 0;i < s.height;i++)
+    {
+      d = inputEntry.at<float>(i);
+      if(d > 0.01)
+      {
+        if(first == true)
+        {
+          l = i;
+          first = false;
+        }
+        u = i;
+      }
+    }
+    first = true;
+    this->rangeChanged();
   }
 
   cv::Mat& output = this->mOutput->getData();
 
-  
+
 
   //CEDAR_DEBUG_ASSERT(this->_mRangeLower->size() == cedar::aux::math::getDimensionalityOf(input));
   //CEDAR_DEBUG_ASSERT(this->_mRangeUpper->size() == cedar::aux::math::getDimensionalityOf(input));
